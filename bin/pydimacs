@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+
+from pydimacs import CNFFormula
+import click
+from pathlib import Path
+
+
+@click.command()
+@click.option('-x', is_flag=True, help="Enable computing graph layout for json export", show_default=True)
+@click.option('-d', '--dim', default=2, type=int, help="Number of dimension for graph layout (if activated)")
+@click.option('-i', '--iter', default=50, type=int, help="Number of iteration for layout computation")
+@click.argument('in_file', type=click.Path(exists=True))
+@click.argument('out_file', type=click.Path())
+def main(x, dim, iter, in_file, out_file):
+    """
+    This utility script allows to convert a SMT2 files to DIMACS,
+    DIMACS to graph JSON files, and also SMT2 to graph via DIMACS.
+    Make sure that files have the appropriate extension!
+    """
+
+    in_file = Path(in_file)
+    out_file = Path(out_file)
+
+    if in_file.suffix == ".smt2":
+        f = CNFFormula.from_smt2_file(in_file)
+    elif in_file.suffix == ".cnf":
+        f = CNFFormula.from_dimacs_file(in_file)
+    else:
+        raise click.BadParameter("Unrecognised extension {} for input file".format(in_file.suffix))
+
+    if out_file.suffix == ".cnf":
+        f.to_dimacs_file(out_file)
+    elif out_file.suffix == ".json":
+        f.to_graph_file(out_file, with_layout=x, dim=dim, iter=iter)
+    else:
+        raise click.BadParameter("Unrecognised extenstion {] for output file".format(out_file.suffix))
+
+
+if __name__ == '__main__':
+    main()
